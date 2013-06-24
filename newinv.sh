@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Sets the winvo invoices directory
-INVOICES_DIR="./invoices"
+INVOICES_DIR="../invoices"
 
 # default client configuration file
 SKEL_FILE="./example.conf"
