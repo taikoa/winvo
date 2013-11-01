@@ -43,7 +43,7 @@ mkdir -p "$folder"
 # create this invoice's conf file, with the given invoice no
 filename="$folder/$1.$nf.conf"
 cp "$SKEL_FILE" "$filename"
-sed -i "s/number: .*/number: $nf/" "$filename"
+sed -i "s/^number: .*/number: $nf/" "$filename"
 
 # update the next invoice no
 (( nf++ ))
