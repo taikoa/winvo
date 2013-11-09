@@ -49,7 +49,7 @@ def get_image(path, width=3*cm):
     return Image(path, width=width, height=(width * aspect))
 
 
-def genPDF(output, config):
+def genPDF(output, config, estimation=False):
     type = config.get('General', 'type')
     img = config.get('General', 'logo')
     address = config.get('General', 'address')
@@ -65,6 +65,10 @@ def genPDF(output, config):
     taxname = config.get('General', 'taxname')
     currency = config.get('General', 'currency')
     lang = config.get('General', 'lang')
+
+    if estimation:
+        description = config.get('General', 'description')
+        description = description.replace('\n', '<br/><br/>')
 
     # Jumps for multiple lines fields
     address = address.replace('\n', '<br/>')
@@ -109,24 +113,27 @@ def genPDF(output, config):
     project = Paragraph(u'<b>%s</b>' % project, styleC)
     payment = Paragraph(payment, styleL)
 
+    if estimation:
+        description = Paragraph(description, styleL)
+
     N = -4 if tax else -3
 
     # invoice Table
     tstyle_list = [
-        ('BOX', (0, 0), (-1, N - 1), 0.25, colors.black),
-        ('BOX', (0, N + 1), (-1, -1), 0.25, colors.black),
-        ('INNERGRID', (0, 0), (-1, N), 0.25, colors.black),
+        ('BOX', (0, 0), (-1, N - 1), 0.25, colors.white),
+        ('BOX', (0, N + 1), (-1, -1), 0.25, colors.white),
+        ('INNERGRID', (0, 0), (-1, N), 0.25, colors.white),
         # Table header
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.85, 0.85, 0.85)),
         ('SPAN', (0, N), (-1, N)),
-        ('LINEBELOW', (0, N + 1), (-1, N + 1), 0.25, colors.black),
-        ('LINEBELOW', (0, N + 2), (-1, N + 2), 0.25, colors.black),
+        ('LINEBELOW', (0, N + 1), (-1, N + 1), 0.25, colors.white),
+        ('LINEBELOW', (0, N + 2), (-1, N + 2), 0.25, colors.white),
         ('BACKGROUND', (0, N + 1), (-1, N + 2),
-         colors.Color(0.80, 1.00, 0.80)),
+         colors.Color(0.95, 0.95, 0.95)),
         ('BACKGROUND', (0, -1), (-1, -1),
-         colors.Color(0.64, 1.00, 0.64)),
+         colors.Color(0.85, 0.85, 0.85)),
     ]
     if type == 'hours':
         tstyle_list.append(('SPAN', (0, N + 1), (2, N + 1)))
@@ -209,18 +216,31 @@ def genPDF(output, config):
     elements.append(address)
     elements.append(Spacer(5*cm, 0.4*cm))
     elements.append(date)
-    if expiry_date:
+
+    if expiry_date and not estimation:
         elements.append(expiry_date)
+
     elements.append(Spacer(5*cm, 1.5*cm))
     elements.append(to)
     elements.append(Spacer(5*cm, 1.5*cm))
-    elements.append(number)
+
+    if not estimation:
+        elements.append(number)
+
     elements.append(Spacer(5*cm, 0.8*cm))
     elements.append(project)
     elements.append(Spacer(5*cm, 0.4*cm))
+
+    if estimation:
+        elements.append(Spacer(5*cm, 0.4*cm))
+        elements.append(description)
+        elements.append(Spacer(10*cm, 0.4*cm))
+
     elements.append(t)
-    elements.append(Spacer(5*cm, 1.5*cm))
-    elements.append(payment)
+
+    if not estimation:
+        elements.append(Spacer(5*cm, 1.5*cm))
+        elements.append(payment)
 
     doc.build(elements)
 
@@ -239,6 +259,10 @@ def main():
     parser = argparse.ArgumentParser(description='Generates invoices')
     parser.add_argument('conf', metavar='conf', type=str,
                         help='The config to generate the invoice')
+    parser.add_argument('--estimation', action='store_true',
+                        default=False,
+                        help='Instead of an invoice we create and estimation')
+
 
     args = parser.parse_args()
     conf = args.conf
@@ -250,7 +274,7 @@ def main():
     config = read_config(conf)
     print "Generating pdf output"
     output = '.'.join(conf.split('.')[0:-1] + ['pdf'])
-    genPDF(output, config)
+    genPDF(output, config, estimation=args.estimation)
     print "Bye"
 
 
