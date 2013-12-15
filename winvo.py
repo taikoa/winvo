@@ -152,6 +152,8 @@ def genPDF(output, config, estimation=False):
     data.append(head)
 
     subtotal = 0
+    subtotal_taxfree = 0
+
     for section in [i for i in config.sections() if i.startswith('Fee')]:
         element = [Paragraph(config.get(section, 'summary'), styleL)]
         if type == 'total':
@@ -161,7 +163,15 @@ def genPDF(output, config, estimation=False):
         else:
             fee = config.get(section, 'fee')
             hours = config.get(section, 'hours')
+
             total = float(fee) * float(hours)
+
+            try:
+                tax_fee = config.get(section, 'tax')
+                subtotal_taxfree += total
+            except ConfigParser.NoOptionError:
+                pass
+
             subtotal += float(total)
             element.append(Paragraph(fee, styleR))
             element.append(Paragraph(hours, styleR))
@@ -188,7 +198,7 @@ def genPDF(output, config, estimation=False):
     # Taxes
     if tax:
         element = []
-        tax = subtotal * (tax / 100.0)
+        tax = (subtotal - subtotal_taxfree) * (tax / 100.0)
         element.append(Paragraph(taxname, styleL))
         if type == 'total':
             element.append(Paragraph('%5.2f' % tax, styleR))
